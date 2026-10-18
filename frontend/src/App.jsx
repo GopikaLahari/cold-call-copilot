@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { CALL_STAGES, OUTCOME_OPTIONS } from "./stages";
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_URL || "https://cold-call-copilot-pogb.onrender.com";
 
 export default function App() {
   const [view, setView] = useState("call");
