@@ -149,7 +149,7 @@ export default function App() {
 
   const currentStage = CALL_STAGES[currentStageIdx] || CALL_STAGES[0];
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "600px", margin: "0 auto", padding: "16px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h2 style={{ fontSize: "18px", fontWeight: "700", color: "#111" }}>
           MERIDIAN <span style={{ color: "#2563eb" }}>• CALL SURFACE</span>
@@ -444,70 +444,228 @@ export default function App() {
           )}
         </div>
       )}
-
       {view === "history" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
           {lastSummary && (
-            <div style={{ background: "#ecfdf5", border: "1px solid #10b981", borderRadius: "8px", padding: "14px" }}>
-              <h4 style={{ fontSize: "14px", fontWeight: "700", color: "#065f46", margin: "0 0 6px 0" }}>
+            <div
+              style={{
+                background: "#ecfdf5",
+                border: "1px solid #10b981",
+                borderRadius: "8px",
+                padding: "14px",
+              }}
+            >
+              <h4
+                style={{
+                  fontSize: "14px",
+                  fontWeight: "700",
+                  color: "#065f46",
+                  margin: "0 0 6px 0",
+                }}
+              >
                 ✓ Call Completed & Saved
               </h4>
-              <p style={{ fontSize: "13px", color: "#047857", lineHeight: "1.4", margin: 0 }}>
-                <strong>Gemini Summary:</strong> {lastSummary}
+              <p
+                style={{
+                  fontSize: "13px",
+                  color: "#047857",
+                  lineHeight: "1.5",
+                  margin: 0,
+                }}
+              >
+                <strong>Executive Summary:</strong> {lastSummary}
               </p>
             </div>
           )}
 
-          <h3 style={{ fontSize: "16px", fontWeight: "700" }}>Past Calls Log</h3>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              borderBottom: "1px solid #eee",
+              paddingBottom: "8px",
+            }}
+          >
+            <h3 style={{ fontSize: "16px", fontWeight: "800", color: "#111", margin: 0 }}>
+              Past Calls Log ({pastCalls.length})
+            </h3>
+            <button
+              onClick={fetchPastCalls}
+              style={{
+                background: "transparent",
+                border: "1px solid #cbd5e1",
+                borderRadius: "6px",
+                padding: "4px 8px",
+                fontSize: "12px",
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
+            >
+              ↻ Refresh
+            </button>
+          </div>
+
           {pastCalls.length === 0 ? (
-            <p style={{ fontSize: "13px", color: "#888" }}>No saved calls yet. Complete a call to see it here.</p>
+            <p style={{ fontSize: "13px", color: "#888" }}>
+              No saved calls found. Complete a call from the Live Call screen.
+            </p>
           ) : (
             pastCalls.map((c) => (
               <div
                 key={c.id || Math.random()}
                 style={{
                   background: "#fff",
-                  borderRadius: "8px",
-                  padding: "14px",
+                  borderRadius: "10px",
+                  padding: "16px",
                   border: "1px solid #e2e8f0",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.03)",
                   display: "flex",
                   flexDirection: "column",
-                  gap: "6px",
+                  gap: "10px",
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                  }}
+                >
                   <div>
-                    <h4 style={{ fontSize: "14px", fontWeight: "700", color: "#111", margin: 0 }}>
-                      {c.prospect_name}, {c.company_name}
+                    <h4
+                      style={{
+                        fontSize: "15px",
+                        fontWeight: "800",
+                        color: "#0f172a",
+                        margin: 0,
+                      }}
+                    >
+                      {c.prospect_name} •{" "}
+                      <span style={{ color: "#334155", fontWeight: "600" }}>
+                        {c.company_name}
+                      </span>
                     </h4>
-                    <p style={{ fontSize: "12px", color: "#666", margin: "2px 0 0 0" }}>{c.prospect_role}</p>
+                    <p style={{ fontSize: "12px", color: "#64748b", margin: "3px 0 0 0" }}>
+                      {c.prospect_role || "Prospect"}
+                    </p>
                   </div>
-                  <span
-                    style={{
-                      fontSize: "11px",
-                      fontWeight: "800",
-                      padding: "3px 6px",
-                      borderRadius: "4px",
-                      background: "#eff6ff",
-                      color: "#1d4ed8",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Stage {c.highest_stage || 1} • {c.outcome}
-                  </span>
+                  <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                    <span
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: "700",
+                        padding: "3px 8px",
+                        borderRadius: "4px",
+                        background: "#eff6ff",
+                        color: "#1d4ed8",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Stage {c.highest_stage || 1} / 8
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: "700",
+                        padding: "3px 8px",
+                        borderRadius: "4px",
+                        background:
+                          c.outcome === "next_step_agreed"
+                            ? "#dcfce7"
+                            : c.outcome === "do_not_call"
+                              ? "#fee2e2"
+                              : "#f1f5f9",
+                        color:
+                          c.outcome === "next_step_agreed"
+                            ? "#15803d"
+                            : c.outcome === "do_not_call"
+                              ? "#b91c1c"
+                              : "#475569",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {c.outcome ? c.outcome.replace(/_/g, " ") : "In Progress"}
+                    </span>
+                  </div>
                 </div>
 
                 {c.llm_summary && (
-                  <div style={{ background: "#f8fafc", padding: "8px 10px", borderRadius: "6px", borderLeft: "3px solid #2563eb", marginTop: "4px" }}>
-                    <p style={{ fontSize: "12px", color: "#334155", lineHeight: "1.4", margin: 0 }}>
-                      <strong>Gemini Summary:</strong> {c.llm_summary}
+                  <div
+                    style={{
+                      background: "#f8fafc",
+                      padding: "10px 12px",
+                      borderRadius: "6px",
+                      borderLeft: "3px solid #2563eb",
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: "12px",
+                        fontWeight: "700",
+                        color: "#1e40af",
+                        margin: "0 0 4px 0",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.5px",
+                      }}
+                    >
+                      Executive Summary
+                    </p>
+                    <p
+                      style={{
+                        fontSize: "13px",
+                        color: "#1e293b",
+                        lineHeight: "1.5",
+                        margin: 0,
+                      }}
+                    >
+                      {c.llm_summary}
                     </p>
                   </div>
                 )}
 
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#94a3b8", marginTop: "4px" }}>
-                  <span>Duration: {formatTime(c.duration_seconds || 0)}</span>
-                  <span>{c.created_at ? new Date(c.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}</span>
+                {c.prospect_notes && (
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: "#475569",
+                      background: "#fffbeb",
+                      border: "1px solid #fef3c7",
+                      padding: "6px 10px",
+                      borderRadius: "6px",
+                    }}
+                  >
+                    <strong>Caller Notes:</strong> {c.prospect_notes}
+                  </div>
+                )}
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    fontSize: "11px",
+                    color: "#94a3b8",
+                    paddingTop: "4px",
+                    borderTop: "1px dashed #f1f5f9",
+                  }}
+                >
+                  <span>
+                    ⏱ Duration: <strong>{formatTime(c.duration_seconds || 0)}</strong>
+                  </span>
+                  <span>
+                    {c.created_at
+                      ? new Date(c.created_at).toLocaleDateString([], {
+                        month: "short",
+                        day: "numeric",
+                      }) +
+                      " • " +
+                      new Date(c.created_at).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                      : ""}
+                  </span>
                 </div>
               </div>
             ))
