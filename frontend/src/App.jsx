@@ -148,7 +148,6 @@ export default function App() {
   }, [view]);
 
   const currentStage = CALL_STAGES[currentStageIdx] || CALL_STAGES[0];
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "600px", margin: "0 auto", padding: "16px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -506,4 +505,15 @@ export default function App() {
                   </div>
                 )}
 
-                <div style={{ display: "flex", justifyContent: "space-between", fon
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#94a3b8", marginTop: "4px" }}>
+                  <span>Duration: {formatTime(c.duration_seconds || 0)}</span>
+                  <span>{c.created_at ? new Date(c.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
