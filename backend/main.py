@@ -22,22 +22,31 @@ app = FastAPI(title="Meridian Cold Call Surface API")
 # Enable CORS so the React frontend can communicate freely with the backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:5173",
+        "https://cold-call-copilot-ruddy.vercel.app",
+        "*"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # 1. Health check endpoint (Mandatory for Render)
+
+
 @app.get("/health")
 def health_check():
     return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
 
 # Request Schemas
+
+
 class StartCallRequest(BaseModel):
     prospect_name: str
     company_name: str
     prospect_role: Optional[str] = "Executive"
+
 
 class StageLogRequest(BaseModel):
     stage_number: int
@@ -45,12 +54,15 @@ class StageLogRequest(BaseModel):
     action_tag: Optional[str] = None
     prospect_words: Optional[str] = None
 
+
 class CompleteCallRequest(BaseModel):
     outcome: str
     duration_seconds: int
     final_notes: Optional[str] = None
 
 # 2. Start a new call record
+
+
 @app.post("/calls/start")
 def start_call(payload: StartCallRequest):
     data = {
@@ -63,10 +75,13 @@ def start_call(payload: StartCallRequest):
     }
     res = supabase.table("calls").insert(data).execute()
     if not res.data:
-        raise HTTPException(status_code=500, detail="Failed to initialize call session")
+        raise HTTPException(
+            status_code=500, detail="Failed to initialize call session")
     return res.data[0]
 
 # 3. Log stage event
+
+
 @app.post("/calls/{call_id}/stage")
 def log_stage(call_id: str, payload: StageLogRequest):
     stage_record = {
@@ -79,7 +94,8 @@ def log_stage(call_id: str, payload: StageLogRequest):
     supabase.table("call_stages").insert(stage_record).execute()
 
     # Track highest stage reached
-    call = supabase.table("calls").select("highest_stage").eq("id", call_id).single().execute()
+    call = supabase.table("calls").select(
+        "highest_stage").eq("id", call_id).single().execute()
     curr_highest = call.data.get("highest_stage", 1) if call.data else 1
     new_highest = max(curr_highest, payload.stage_number)
 
@@ -91,9 +107,12 @@ def log_stage(call_id: str, payload: StageLogRequest):
     return {"status": "stage_logged", "highest_stage": new_highest}
 
 # 4. End call & generate Gemini executive summary
+
+
 @app.post("/calls/{call_id}/complete")
 def complete_call(call_id: str, payload: CompleteCallRequest):
-    stages_res = supabase.table("call_stages").select("*").eq("call_id", call_id).order("created_at").execute()
+    stages_res = supabase.table("call_stages").select(
+        "*").eq("call_id", call_id).order("created_at").execute()
     logged_events = stages_res.data or []
 
     events_summary = "\n".join([
@@ -142,11 +161,15 @@ def complete_call(call_id: str, payload: CompleteCallRequest):
         "llm_summary": summary_text,
         "ended_at": datetime.utcnow().isoformat()
     }
-    res = supabase.table("calls").update(update_data).eq("id", call_id).execute()
+    res = supabase.table("calls").update(
+        update_data).eq("id", call_id).execute()
     return res.data[0] if res.data else update_data
 
 # 5. List all calls for the history screen
+
+
 @app.get("/calls")
 def get_calls():
-    res = supabase.table("calls").select("*").order("created_at", desc=True).limit(50).execute()
+    res = supabase.table("calls").select(
+        "*").order("created_at", desc=True).limit(50).execute()
     return res.data or []
