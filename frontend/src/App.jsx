@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { CALL_STAGES, OUTCOME_OPTIONS } from "./stages";
 
-const API_BASE = import.meta.env.VITE_API_URL || "https://cold-call-copilot-pogb.onrender.com";
+const RAW_API_BASE = import.meta.env.VITE_API_URL || "https://cold-call-copilot-pogb.onrender.com";
+const API_BASE = RAW_API_BASE.replace(/\/+$/, "");
 
 export default function App() {
   const [view, setView] = useState("call");
@@ -14,6 +15,7 @@ export default function App() {
   const [selectedOutcome, setSelectedOutcome] = useState("next_step_agreed");
   const [pastCalls, setPastCalls] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [lastSummary, setLastSummary] = useState(null);
 
   const [prospectName, setProspectName] = useState("Dev Sharma");
   const [prospectRole, setProspectRole] = useState("Technical Services Director");
@@ -28,13 +30,14 @@ export default function App() {
   }, [activeCall, isEnding]);
 
   const formatTime = (secs) => {
-    const m = Math.floor(secs / 60).toString().padStart(2, "0");
-    const s = (secs % 60).toString().padStart(2, "0");
+    const m = Math.floor((secs || 0) / 60).toString().padStart(2, "0");
+    const s = ((secs || 0) % 60).toString().padStart(2, "0");
     return `${m}:${s}`;
   };
 
   const handleStartCall = async () => {
     setLoading(true);
+    setLastSummary(null);
     try {
       const res = await fetch(`${API_BASE}/calls/start`, {
         method: "POST",
@@ -45,6 +48,9 @@ export default function App() {
           prospect_role: prospectRole,
         }),
       });
+      if (!res.ok) {
+        throw new Error(`Server returned ${res.status}`);
+      }
       const data = await res.json();
       setActiveCall(data);
       setCurrentStageIdx(0);
@@ -53,7 +59,8 @@ export default function App() {
       setNotes("");
       setIsEnding(false);
     } catch (err) {
-      alert("Could not reach backend. Is FastAPI running on port 8000?");
+      console.error(err);
+      alert("Could not reach backend. Please ensure the Render service is awake.");
     } finally {
       setLoading(false);
     }
@@ -82,11 +89,15 @@ export default function App() {
         setIsEnding(true);
       }
     } catch (e) {
-      console.error(e);
+      console.error("Error saving stage:", e);
     }
   };
 
   const handleCompleteCall = async () => {
+    if (!activeCall?.id) {
+      alert("No active call session found.");
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE}/calls/${activeCall.id}/complete`, {
@@ -98,12 +109,17 @@ export default function App() {
           final_notes: notes || null,
         }),
       });
-      await res.json();
+      if (!res.ok) {
+        throw new Error(`Complete call failed with ${res.status}`);
+      }
+      const data = await res.json();
+      setLastSummary(data?.llm_summary || "Call logged successfully.");
       setActiveCall(null);
       setIsEnding(false);
-      fetchPastCalls();
+      await fetchPastCalls();
       setView("history");
     } catch (e) {
+      console.error(e);
       alert("Error saving call outcome");
     } finally {
       setLoading(false);
@@ -113,10 +129,15 @@ export default function App() {
   const fetchPastCalls = async () => {
     try {
       const res = await fetch(`${API_BASE}/calls`);
-      const data = await res.json();
-      setPastCalls(data);
+      if (res.ok) {
+        const data = await res.json();
+        setPastCalls(Array.isArray(data) ? data : []);
+      } else {
+        setPastCalls([]);
+      }
     } catch (e) {
-      console.error(e);
+      console.error("Error fetching calls:", e);
+      setPastCalls([]);
     }
   };
 
@@ -126,10 +147,10 @@ export default function App() {
     }
   }, [view]);
 
-  const currentStage = CALL_STAGES[currentStageIdx];
+  const currentStage = CALL_STAGES[currentStageIdx] || CALL_STAGES[0];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "600px", margin: "0 auto", padding: "16px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h2 style={{ fontSize: "18px", fontWeight: "700", color: "#111" }}>
           MERIDIAN <span style={{ color: "#2563eb" }}>• CALL SURFACE</span>
@@ -191,7 +212,7 @@ export default function App() {
               <div>
                 <label style={{ fontSize: "12px", fontWeight: "600", color: "#444" }}>Prospect Name</label>
                 <input
-                  style={{ width: "100%", padding: "8px", marginTop: "4px", borderRadius: "6px", border: "1px solid #ccc" }}
+                  style={{ width: "100%", padding: "8px", marginTop: "4px", borderRadius: "6px", border: "1px solid #ccc", boxSizing: "border-box" }}
                   value={prospectName}
                   onChange={(e) => setProspectName(e.target.value)}
                 />
@@ -200,7 +221,7 @@ export default function App() {
               <div>
                 <label style={{ fontSize: "12px", fontWeight: "600", color: "#444" }}>Designation / Role</label>
                 <input
-                  style={{ width: "100%", padding: "8px", marginTop: "4px", borderRadius: "6px", border: "1px solid #ccc" }}
+                  style={{ width: "100%", padding: "8px", marginTop: "4px", borderRadius: "6px", border: "1px solid #ccc", boxSizing: "border-box" }}
                   value={prospectRole}
                   onChange={(e) => setProspectRole(e.target.value)}
                 />
@@ -209,7 +230,7 @@ export default function App() {
               <div>
                 <label style={{ fontSize: "12px", fontWeight: "600", color: "#444" }}>Company Name</label>
                 <input
-                  style={{ width: "100%", padding: "8px", marginTop: "4px", borderRadius: "6px", border: "1px solid #ccc" }}
+                  style={{ width: "100%", padding: "8px", marginTop: "4px", borderRadius: "6px", border: "1px solid #ccc", boxSizing: "border-box" }}
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                 />
@@ -268,13 +289,13 @@ export default function App() {
 
               <div>
                 <span style={{ fontSize: "11px", fontWeight: "800", color: "#666", textTransform: "uppercase" }}>
-                  Stage {currentStage.id} of 8
+                  Stage {currentStage?.id || 1} of 8
                 </span>
                 <h2 style={{ fontSize: "20px", fontWeight: "800", color: "#000", marginTop: "2px" }}>
-                  {currentStage.name}
+                  {currentStage?.name}
                 </h2>
                 <p style={{ fontSize: "13px", color: "#444", marginTop: "4px", lineHeight: "1.4" }}>
-                  {currentStage.purpose}
+                  {currentStage?.purpose}
                 </p>
               </div>
 
@@ -283,7 +304,7 @@ export default function App() {
                   They May Say
                 </span>
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "6px" }}>
-                  {currentStage.theyMaySay.map((phrase, idx) => (
+                  {(currentStage?.theyMaySay || []).map((phrase, idx) => (
                     <div
                       key={idx}
                       style={{
@@ -307,7 +328,7 @@ export default function App() {
                   What Happened
                 </span>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginTop: "6px" }}>
-                  {currentStage.quickTags.map((tag) => (
+                  {(currentStage?.quickTags || []).map((tag) => (
                     <button
                       key={tag}
                       type="button"
@@ -347,6 +368,7 @@ export default function App() {
                     border: "1px solid #cbd5e1",
                     fontSize: "13px",
                     resize: "none",
+                    boxSizing: "border-box",
                   }}
                 />
               </div>
@@ -398,7 +420,7 @@ export default function App() {
                     }}
                   >
                     {currentStageIdx < CALL_STAGES.length - 1
-                      ? `NEXT: ${CALL_STAGES[currentStageIdx + 1].name.toUpperCase()}`
+                      ? `NEXT: ${CALL_STAGES[currentStageIdx + 1]?.name?.toUpperCase()}`
                       : "FINISH CALL"}
                   </button>
                   <button
@@ -425,14 +447,25 @@ export default function App() {
       )}
 
       {view === "history" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          {lastSummary && (
+            <div style={{ background: "#ecfdf5", border: "1px solid #10b981", borderRadius: "8px", padding: "14px" }}>
+              <h4 style={{ fontSize: "14px", fontWeight: "700", color: "#065f46", margin: "0 0 6px 0" }}>
+                ✓ Call Completed & Saved
+              </h4>
+              <p style={{ fontSize: "13px", color: "#047857", lineHeight: "1.4", margin: 0 }}>
+                <strong>Gemini Summary:</strong> {lastSummary}
+              </p>
+            </div>
+          )}
+
           <h3 style={{ fontSize: "16px", fontWeight: "700" }}>Past Calls Log</h3>
           {pastCalls.length === 0 ? (
             <p style={{ fontSize: "13px", color: "#888" }}>No saved calls yet. Complete a call to see it here.</p>
           ) : (
             pastCalls.map((c) => (
               <div
-                key={c.id}
+                key={c.id || Math.random()}
                 style={{
                   background: "#fff",
                   borderRadius: "8px",
@@ -445,10 +478,10 @@ export default function App() {
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div>
-                    <h4 style={{ fontSize: "14px", fontWeight: "700", color: "#111" }}>
+                    <h4 style={{ fontSize: "14px", fontWeight: "700", color: "#111", margin: 0 }}>
                       {c.prospect_name}, {c.company_name}
                     </h4>
-                    <p style={{ fontSize: "12px", color: "#666" }}>{c.prospect_role}</p>
+                    <p style={{ fontSize: "12px", color: "#666", margin: "2px 0 0 0" }}>{c.prospect_role}</p>
                   </div>
                   <span
                     style={{
@@ -461,27 +494,16 @@ export default function App() {
                       textTransform: "uppercase",
                     }}
                   >
-                    Stage {c.highest_stage} • {c.outcome}
+                    Stage {c.highest_stage || 1} • {c.outcome}
                   </span>
                 </div>
 
                 {c.llm_summary && (
                   <div style={{ background: "#f8fafc", padding: "8px 10px", borderRadius: "6px", borderLeft: "3px solid #2563eb", marginTop: "4px" }}>
-                    <p style={{ fontSize: "12px", color: "#334155", lineHeight: "1.4" }}>
+                    <p style={{ fontSize: "12px", color: "#334155", lineHeight: "1.4", margin: 0 }}>
                       <strong>Gemini Summary:</strong> {c.llm_summary}
                     </p>
                   </div>
                 )}
 
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#94a3b8", marginTop: "2px" }}>
-                  <span>Duration: {formatTime(c.duration_seconds || 0)}</span>
-                  <span>{new Date(c.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
+                <div style={{ display: "flex", justifyContent: "space-between", fon
