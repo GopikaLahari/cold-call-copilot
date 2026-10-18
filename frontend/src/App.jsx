@@ -446,38 +446,6 @@ export default function App() {
       )}
       {view === "history" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-          {lastSummary && (
-            <div
-              style={{
-                background: "#ecfdf5",
-                border: "1px solid #10b981",
-                borderRadius: "8px",
-                padding: "14px",
-              }}
-            >
-              <h4
-                style={{
-                  fontSize: "14px",
-                  fontWeight: "700",
-                  color: "#065f46",
-                  margin: "0 0 6px 0",
-                }}
-              >
-                ✓ Call Completed & Saved
-              </h4>
-              <p
-                style={{
-                  fontSize: "13px",
-                  color: "#047857",
-                  lineHeight: "1.5",
-                  margin: 0,
-                }}
-              >
-                <strong>Executive Summary:</strong> {lastSummary}
-              </p>
-            </div>
-          )}
-
           <div
             style={{
               display: "flex",
