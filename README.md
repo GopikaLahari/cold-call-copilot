@@ -23,7 +23,7 @@ A lightweight, low-friction live cold-call interface designed to assist SDRs in 
 
 ### 2. Grounded Summarization & Guardrails
 * Summaries strictly reflect observed facts, logged stages, and explicit prospect statements.
-* Guardrails eliminate standard sales-optimism hallucinations (such as inventing 3–6 month follow-ups when a prospect clearly declines).
+* These prompt guardrails help reduce unsupported assumptions and follow-up suggestions by grounding summaries in the caller's recorded events and notes..
 * Accurately distinguishes between a prospect explicitly requesting no contact (`do_not_call`) versus simply declining an offering (`not_interested`).
 * Proposed next steps are framed as CRM recommendations rather than executed actions.
 
