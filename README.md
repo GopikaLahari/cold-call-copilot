@@ -42,6 +42,7 @@ A lightweight, low-friction live cold-call interface designed to assist SDRs in 
 
 The PostgreSQL database runs on Supabase with the following schema:
 
+```sql
 -- Table: calls
 CREATE TABLE IF NOT EXISTS public.calls (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -68,11 +69,24 @@ CREATE TABLE IF NOT EXISTS public.call_stages (
     action_tag TEXT,
     prospect_words TEXT
 );
+```
+
+-- Table: call_stages
+CREATE TABLE IF NOT EXISTS public.call_stages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    call_id UUID REFERENCES public.calls(id) ON DELETE CASCADE,
+    stage_number INT NOT NULL,
+    stage_name TEXT NOT NULL,
+    action_tag TEXT,
+    prospect_words TEXT
+);
 
 ---
 
 ## Project Structure
 
+```text
 cold-call-copilot/
 ├── backend/
 │   ├── main.py              # FastAPI endpoints, DB client, Gemini prompt logic
@@ -84,6 +98,7 @@ cold-call-copilot/
 ├── schema.sql               # Supabase PostgreSQL schema definition
 ├── .gitignore
 └── README.md
+```
 
 ---
 
