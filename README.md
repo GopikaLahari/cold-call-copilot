@@ -71,17 +71,6 @@ CREATE TABLE IF NOT EXISTS public.call_stages (
 );
 ```
 
--- Table: call_stages
-CREATE TABLE IF NOT EXISTS public.call_stages (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    call_id UUID REFERENCES public.calls(id) ON DELETE CASCADE,
-    stage_number INT NOT NULL,
-    stage_name TEXT NOT NULL,
-    action_tag TEXT,
-    prospect_words TEXT
-);
-
 ---
 
 ## Project Structure
